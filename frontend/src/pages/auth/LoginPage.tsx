@@ -41,8 +41,8 @@ export default function LoginPage() {
       toast.success('Welcome back!')
       navigate(from, { replace: true })
     } catch (error: unknown) {
-      const err = error as { response?: { data?: { detail?: string } } }
-      toast.error(err.response?.data?.detail || 'Login failed. Please try again.')
+      const err = error as { response?: { data?: { detail?: string } }; message?: string }
+      toast.error(err.response?.data?.detail || err.message || 'Login failed. Please try again.')
     } finally {
       setIsLoading(false)
     }

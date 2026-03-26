@@ -99,16 +99,15 @@ export default function SignupPage() {
 
       // Redirect to checkout if plan selected
       if (selectedPlan) {
-        const { subscriptionApi: subApi } = await import('../../lib/api')
-        const checkout = await subApi.createCheckout(selectedPlan.plan_type as 'monthly' | 'yearly')
+        const checkout = await subscriptionApi.createCheckout(selectedPlan.plan_type as 'monthly' | 'yearly')
         window.location.href = checkout.data.checkout_url
       } else {
         toast.success('Account created successfully!')
         navigate('/dashboard')
       }
     } catch (error: unknown) {
-      const err = error as { response?: { data?: { detail?: string } } }
-      toast.error(err.response?.data?.detail || 'Registration failed. Please try again.')
+      const err = error as { response?: { data?: { detail?: string } }; message?: string }
+      toast.error(err.response?.data?.detail || err.message || 'Registration failed. Please try again.')
     } finally {
       setIsLoading(false)
     }

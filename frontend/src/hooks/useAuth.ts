@@ -1,8 +1,8 @@
 import { createContext, useContext, useState, useEffect, useCallback, type ReactNode } from 'react'
 import { createElement } from 'react'
 import toast from 'react-hot-toast'
+import { supabase } from '../lib/supabase'
 import { authApi } from '../lib/api'
-import { storeToken, storeUser, getToken, getStoredUser, removeToken, isTokenExpired } from '../lib/auth'
 import type { User } from '../types'
 
 interface AuthContextType {
@@ -25,41 +25,59 @@ interface AuthContextType {
 
 const AuthContext = createContext<AuthContextType | null>(null)
 
+async function fetchProfile(userId: string): Promise<User | null> {
+  const { data, error } = await supabase
+    .from('profiles')
+    .select('*')
+    .eq('id', userId)
+    .single()
+  if (error || !data) return null
+  return data as User
+}
+
 export function AuthProvider({ children }: { children: ReactNode }) {
-  const [user, setUser] = useState<User | null>(() => getStoredUser())
+  const [user, setUser] = useState<User | null>(null)
   const [isLoading, setIsLoading] = useState(true)
 
   const refreshUser = useCallback(async () => {
-    const token = getToken()
-    if (!token || isTokenExpired(token)) {
-      removeToken()
+    const { data: { user: authUser } } = await supabase.auth.getUser()
+    if (authUser) {
+      const profile = await fetchProfile(authUser.id)
+      setUser(profile)
+    } else {
       setUser(null)
-      setIsLoading(false)
-      return
-    }
-
-    try {
-      const response = await authApi.me()
-      setUser(response.data)
-      storeUser(response.data)
-    } catch {
-      removeToken()
-      setUser(null)
-    } finally {
-      setIsLoading(false)
     }
   }, [])
 
   useEffect(() => {
-    refreshUser()
-  }, [refreshUser])
+    // Initial session check
+    supabase.auth.getSession().then(async ({ data: { session } }) => {
+      if (session?.user) {
+        const profile = await fetchProfile(session.user.id)
+        setUser(profile)
+      }
+      setIsLoading(false)
+    })
+
+    // Listen for auth state changes
+    const { data: { subscription } } = supabase.auth.onAuthStateChange(async (event, session) => {
+      if (session?.user) {
+        const profile = await fetchProfile(session.user.id)
+        setUser(profile)
+      } else {
+        setUser(null)
+      }
+      if (event === 'SIGNED_OUT') {
+        setIsLoading(false)
+      }
+    })
+
+    return () => subscription.unsubscribe()
+  }, [])
 
   const login = useCallback(async (email: string, password: string) => {
-    const response = await authApi.login(email, password)
-    const { access_token, user: userData } = response.data
-    storeToken(access_token)
-    storeUser(userData)
-    setUser(userData)
+    await authApi.login(email, password)
+    // onAuthStateChange will update user state
   }, [])
 
   const register = useCallback(async (data: {
@@ -69,16 +87,12 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     charity_id?: string
     charity_percentage?: number
   }) => {
-    const response = await authApi.register(data)
-    const { access_token, user: userData } = response.data
-    storeToken(access_token)
-    storeUser(userData)
-    setUser(userData)
+    await authApi.register(data)
+    // onAuthStateChange will update user state
   }, [])
 
   const logout = useCallback(() => {
-    authApi.logout().catch(() => {})
-    removeToken()
+    supabase.auth.signOut()
     setUser(null)
     toast.success('Logged out successfully')
     window.location.href = '/'

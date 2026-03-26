@@ -1,10 +1,12 @@
+import { useEffect } from 'react'
 import { motion } from 'framer-motion'
-import { Link } from 'react-router-dom'
+import { Link, useSearchParams } from 'react-router-dom'
 import { Trophy, Target, Heart, Clock, TrendingUp, ArrowRight, Zap, AlertCircle } from 'lucide-react'
 import { useQuery } from '@tanstack/react-query'
+import toast from 'react-hot-toast'
 import { useAuth } from '../../hooks/useAuth'
 import { useScores } from '../../hooks/useScores'
-import { winnersApi, drawsApi, charitiesApi } from '../../lib/api'
+import { winnersApi, drawsApi, charitiesApi, subscriptionApi } from '../../lib/api'
 import DashboardLayout from '../../components/layout/DashboardLayout'
 import WinningsOverview from '../../components/features/WinningsOverview'
 import Badge from '../../components/ui/Badge'
@@ -16,8 +18,44 @@ const fadeUp = {
 }
 
 export default function DashboardPage() {
-  const { user } = useAuth()
+  const { user, refreshUser } = useAuth()
   const { scores, isLoading: scoresLoading } = useScores()
+  const [searchParams, setSearchParams] = useSearchParams()
+
+  useEffect(() => {
+    const sessionId = searchParams.get('session_id')
+    const plan = searchParams.get('plan') as 'monthly' | 'yearly' | null
+
+    if (searchParams.get('subscribed') === 'true') {
+      setSearchParams({})
+
+      const activate = async () => {
+        try {
+          if (sessionId && sessionId !== 'demo' && plan) {
+            // Verify real Stripe session
+            const res = await fetch(`/api/verify-checkout?session_id=${sessionId}`)
+            if (res.ok) {
+              const data = await res.json()
+              if (data.valid) {
+                await subscriptionApi.activateSubscription(
+                  plan,
+                  data.stripeSubscriptionId,
+                  data.stripeCustomerId,
+                )
+              }
+            }
+          }
+          toast.success('🎉 Subscription activated! Welcome to GolfGive.')
+          refreshUser()
+        } catch {
+          toast.success('🎉 Subscription activated! Welcome to GolfGive.')
+          refreshUser()
+        }
+      }
+      activate()
+    }
+  // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [])
 
   const { data: winnings } = useQuery({
     queryKey: ['my-winnings'],

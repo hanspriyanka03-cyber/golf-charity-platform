@@ -25,8 +25,9 @@ export default function Badge({ children, variant = 'default', status, className
     green: 'bg-primary/10 border-primary/30 text-primary-300',
   }
 
+  const variantKey = variant === 'status' ? 'default' : variant
   return (
-    <span className={cn(base, variants[variant], className)}>
+    <span className={cn(base, variants[variantKey as keyof typeof variants], className)}>
       {children}
     </span>
   )

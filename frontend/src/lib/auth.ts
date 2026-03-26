@@ -1,20 +1,9 @@
+// Auth utilities — Supabase manages session/token storage automatically.
+// These are kept for backwards compatibility with any remaining imports.
+
 import type { User } from '../types'
 
-const TOKEN_KEY = 'golf_charity_token'
 const USER_KEY = 'golf_charity_user'
-
-export function storeToken(token: string): void {
-  localStorage.setItem(TOKEN_KEY, token)
-}
-
-export function getToken(): string | null {
-  return localStorage.getItem(TOKEN_KEY)
-}
-
-export function removeToken(): void {
-  localStorage.removeItem(TOKEN_KEY)
-  localStorage.removeItem(USER_KEY)
-}
 
 export function storeUser(user: User): void {
   localStorage.setItem(USER_KEY, JSON.stringify(user))
@@ -30,23 +19,11 @@ export function getStoredUser(): User | null {
   }
 }
 
-export function isAuthenticated(): boolean {
-  return !!getToken()
+export function removeToken(): void {
+  localStorage.removeItem(USER_KEY)
 }
 
-export function decodeToken(token: string): { sub: string; role: string; exp: number } | null {
-  try {
-    const parts = token.split('.')
-    if (parts.length !== 3) return null
-    const payload = JSON.parse(atob(parts[1]))
-    return payload
-  } catch {
-    return null
-  }
-}
-
-export function isTokenExpired(token: string): boolean {
-  const decoded = decodeToken(token)
-  if (!decoded) return true
-  return decoded.exp * 1000 < Date.now()
-}
+// Legacy stubs — Supabase handles tokens internally
+export function storeToken(_token: string): void {}
+export function getToken(): string | null { return null }
+export function isTokenExpired(_token: string): boolean { return false }

@@ -47,9 +47,10 @@ export default function SignupPage() {
   const [selectedCharity, setSelectedCharity] = useState<Charity | null>(null)
   const [charityPercentage, setCharityPercentage] = useState(10)
 
-  const { data: charities } = useQuery({
+  const { data: charities, isLoading: charitiesLoading } = useQuery({
     queryKey: ['charities'],
     queryFn: () => charitiesApi.listCharities().then(r => r.data),
+    retry: 2,
   })
 
   const { data: plans } = useQuery({
@@ -284,7 +285,15 @@ export default function SignupPage() {
                 </div>
 
                 <div className="grid grid-cols-1 sm:grid-cols-2 gap-4 mb-5 max-h-[320px] overflow-y-auto">
-                  {charities?.map(charity => (
+                  {charitiesLoading ? (
+                    <div className="col-span-2 flex justify-center py-8">
+                      <div className="animate-spin w-8 h-8 border-2 border-border border-t-accent rounded-full" />
+                    </div>
+                  ) : !charities || charities.length === 0 ? (
+                    <div className="col-span-2 text-center py-6 text-text-muted text-sm">
+                      No charities available yet — you can choose one from your dashboard later.
+                    </div>
+                  ) : charities.map(charity => (
                     <CharityCard
                       key={charity.id}
                       charity={charity}

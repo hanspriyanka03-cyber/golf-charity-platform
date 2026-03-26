@@ -11,9 +11,10 @@ export default function CharitiesPage() {
   const [search, setSearch] = useState('')
   const [filterFeatured, setFilterFeatured] = useState(false)
 
-  const { data: charities, isLoading } = useQuery({
+  const { data: charities, isLoading, error } = useQuery({
     queryKey: ['charities', search, filterFeatured],
     queryFn: () => charitiesApi.listCharities(search || undefined, filterFeatured || undefined).then(r => r.data),
+    retry: false,
   })
 
   const featured = charities?.filter(c => c.is_featured) || []
@@ -66,7 +67,13 @@ export default function CharitiesPage() {
           </button>
         </div>
 
-        {isLoading ? (
+        {error ? (
+          <div className="text-center py-16">
+            <Heart size={40} className="text-red-400 mx-auto mb-4" />
+            <p className="text-red-400 font-medium">Failed to load charities</p>
+            <p className="text-text-muted text-xs mt-2 font-mono">{String(error)}</p>
+          </div>
+        ) : isLoading ? (
           <div className="flex justify-center py-16">
             <LoadingSpinner size="lg" />
           </div>

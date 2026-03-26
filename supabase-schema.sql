@@ -319,6 +319,18 @@ INSERT INTO public.charities (name, description, image_url, website, is_featured
 )
 ON CONFLICT DO NOTHING;
 
+-- ─── GRANTS: Allow anon and authenticated roles to read public data ──────────
+
+GRANT USAGE ON SCHEMA public TO anon, authenticated;
+GRANT SELECT ON public.charities TO anon, authenticated;
+GRANT SELECT ON public.draws TO anon, authenticated;
+GRANT SELECT, INSERT, UPDATE, DELETE ON public.profiles TO authenticated;
+GRANT SELECT, INSERT, UPDATE, DELETE ON public.scores TO authenticated;
+GRANT SELECT, INSERT, UPDATE, DELETE ON public.subscriptions TO authenticated;
+GRANT SELECT, INSERT, UPDATE, DELETE ON public.draw_entries TO authenticated;
+GRANT SELECT, INSERT, UPDATE ON public.winners TO authenticated;
+GRANT SELECT ON public.winners TO anon;
+
 -- ─── ADMIN USER: Create via Supabase Dashboard ────────────────
 -- After running this schema:
 -- 1. Go to Authentication → Users → Add user

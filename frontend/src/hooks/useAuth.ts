@@ -37,7 +37,7 @@ async function fetchProfile(userId: string): Promise<User | null> {
 
 export function AuthProvider({ children }: { children: ReactNode }) {
   const [user, setUser] = useState<User | null>(null)
-  const [isLoading, setIsLoading] = useState(true)
+  const [isLoading, setIsLoading] = useState(false)
 
   const refreshUser = useCallback(async () => {
     const { data: { user: authUser } } = await supabase.auth.getUser()
@@ -50,13 +50,14 @@ export function AuthProvider({ children }: { children: ReactNode }) {
   }, [])
 
   useEffect(() => {
-    // Initial session check
+    // Initial session check — non-blocking, resolve quietly in background
     supabase.auth.getSession().then(async ({ data: { session } }) => {
       if (session?.user) {
+        setIsLoading(true)
         const profile = await fetchProfile(session.user.id)
         setUser(profile)
+        setIsLoading(false)
       }
-      setIsLoading(false)
     })
 
     // Listen for auth state changes

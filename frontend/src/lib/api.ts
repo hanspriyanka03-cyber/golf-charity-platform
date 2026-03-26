@@ -293,7 +293,7 @@ export const subscriptionApi = {
 
 export const charitiesApi = {
   listCharities: async (search?: string, featured?: boolean) => {
-    let query = supabase.from('charities').select('*').eq('is_active', true)
+    let query = supabase.from('charities').select('*')
     if (search) query = query.ilike('name', `%${search}%`)
     if (featured !== undefined) query = query.eq('is_featured', featured)
     query = query.order('is_featured', { ascending: false }).order('name')

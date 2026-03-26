@@ -298,9 +298,8 @@ export const charitiesApi = {
     if (featured !== undefined) query = query.eq('is_featured', featured)
     query = query.order('is_featured', { ascending: false }).order('name')
 
-    const { data, error } = await query
-    if (error) throwError(error)
-    return { data: data as Charity[] }
+    const { data } = await query
+    return { data: (data || []) as Charity[] }
   },
 
   getCharity: async (id: string) => {

@@ -50,7 +50,8 @@ export default function SignupPage() {
   const { data: charities, isLoading: charitiesLoading } = useQuery({
     queryKey: ['charities'],
     queryFn: () => charitiesApi.listCharities().then(r => r.data),
-    retry: 2,
+    retry: false,
+    staleTime: 60000,
   })
 
   const { data: plans } = useQuery({
